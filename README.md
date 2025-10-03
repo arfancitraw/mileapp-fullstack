@@ -1,3 +1,6 @@
+Frontend URL : https://task-management-xi-nine.vercel.app/login
+Backend URL : https://mileapp-fullstack-production.up.railway.app
+
 📋 Full-Featured Task Management Module
 A complete, secure, and user-friendly task management system built with Express.js (mock REST API) and Vue.js 3 (frontend) — designed for demonstration, learning, and easy deployment.
 
