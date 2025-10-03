@@ -62,51 +62,81 @@ db.tasks.insertMany([
 
 // ===== INDEXES FOR `users` COLLECTION =====
 
-// Unique index for email
+// Create a unique index on the `email` field
+// - Speeds up login and user lookup queries that filter by `email`
+// - Enforces uniqueness constraint: prevents duplicate email registrations
+// - `background: true` ensures the index is built without blocking read/write operations
 db.users.createIndex(
   { email: 1 },
-  { unique: true, name: 'users_email_unique' }
+  { unique: true, name: 'users_email_unique', background: true }
 );
 
-// Index for username
+// Create a unique index on the `username` field
+// - Accelerates queries that search or validate usernames (e.g., profile lookup)
+// - Guarantees username uniqueness across the system
+// - `background: true` allows concurrent database operations during index creation
 db.users.createIndex(
   { username: 1 },
-  { unique: true, name: 'users_username_unique' }
+  { unique: true, name: 'users_username_unique', background: true }
 );
 
-// Index for createdAt
+// Create a descending index on `createdAt`
+// - Optimizes queries that sort users by registration date (newest first)
+// - Supports efficient pagination for user lists (e.g., admin dashboard)
+// - `background: true` prevents downtime during index build
 db.users.createIndex(
   { createdAt: -1 },
-  { name: 'users_createdAt_desc' }
+  { name: 'users_createdAt_desc', background: true }
 );
 
 // ===== INDEXES FOR `tasks` COLLECTION =====
-  
-// Compound index: userId + completed
+
+// Create a compound index on `userId` and `completed`
+// - Speeds up queries that fetch tasks for a specific user filtered by completion status
+//   Example: GET /tasks?userId=123&completed=false
+// - Reduces need for in-memory filtering after initial user-based fetch
+// - `background: true` ensures smooth index creation in production
 db.tasks.createIndex(
   { userId: 1, completed: 1 },
-  { name: 'tasks_userId_completed' }
+  { name: 'tasks_userId_completed', background: true }
 );
 
-// compound index for filter + sort
+// Create a compound index on `status` and `createdAt` (descending)
+// - Optimizes common filtered + sorted queries:
+//   Example: GET /tasks?status=pending&sortBy=createdAt&order=desc
+// - Avoids expensive in-memory sorting by leveraging pre-sorted index
+// - `background: true` maintains database availability during build
 db.tasks.createIndex(
-  { status: 1, createdAt: -1 }
+  { status: 1, createdAt: -1 },
+  { name: 'tasks_status_createdAt_desc', background: true }
 );
 
-// Index for userId
+// Create a single-field index on `userId`
+// - Accelerates all queries that retrieve tasks by user (core operation)
+//   Example: GET /tasks?userId=123
+// - Serves as fallback when compound index isn't used
+// - `background: true` for non-blocking index creation
 db.tasks.createIndex(
   { userId: 1 },
-  { name: 'tasks_userId' }
+  { name: 'tasks_userId', background: true }
 );
 
-// Index for createdAt
+// Create a descending index on `createdAt`
+// - Optimizes default task sorting by recency (newest first)
+//   Example: GET /tasks?sortBy=createdAt&order=desc
+// - Supports efficient time-range queries (e.g., "tasks from last week")
+// - `background: true` prevents operational disruption
 db.tasks.createIndex(
   { createdAt: -1 },
-  { name: 'tasks_createdAt_desc' }
+  { name: 'tasks_createdAt_desc', background: true }
 );
 
-// Text index for searching by title & description
+// Create a text index on `title` and `description`
+// - Enables full-text search across task content
+//   Example: Search for "milk" matches title "Buy groceries" and description "Milk, eggs, bread"
+// - Supports case-insensitive and diacritic-insensitive search by default
+// - `background: true` ensures search functionality can be added without downtime
 db.tasks.createIndex(
   { title: "text", description: "text" },
-  { name: 'tasks_text_search' }
+  { name: 'tasks_text_search', background: true }
 );

@@ -1,9 +1,17 @@
 <template>
   <div :class="isEditing ? 'card editing' : 'card'">
+    <div v-if="successMessage" style="margin-bottom: 1rem; padding: 0.75rem; background: #d1fae5; color: #047857; border-radius: var(--radius); display: flex; align-items: center; gap: 0.5rem;">
+      <span>✅</span>
+      <span>{{ successMessage }}</span>
+    </div>
+
+    <div v-if="errorMessage" style="margin-bottom: 1rem; padding: 0.75rem; background: #fee2e2; color: #b91c1c; border-radius: var(--radius); display: flex; align-items: center; gap: 0.5rem;">
+      <span>❌</span>
+      <span>{{ errorMessage }}</span>
+    </div>
     <h3 style="margin-bottom: 1.25rem; font-size: 1.25rem; font-weight: 600;">
       {{ isEditing ? 'Edit Task' : 'Add New Task' }}
     </h3>
-    
     <form @submit.prevent="handleSubmit" style="display: flex; flex-direction: column; gap: 1.25rem;">
       <div class="form-group">
         <label class="form-label">Title</label>
@@ -54,7 +62,7 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, ref, nextTick } from 'vue'
 
 const props = defineProps({
   initialData: {
@@ -67,9 +75,37 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'cancel'])
 
 const form = reactive({ ...props.initialData })
+const successMessage = ref('')
+const errorMessage = ref('')
 
-const handleSubmit = () => {
-  emit('submit', { ...form })
+const handleSubmit = async () => {
+  try {
+    await emit('submit', { ...form })
+
+    if (props.isEditing) {
+      successMessage.value = 'Task updated successfully!'
+      errorMessage.value = ''
+      await nextTick()
+      setTimeout(() => {
+        successMessage.value = ''
+        emit('cancel')
+      }, 1500)
+    } else {
+      form.title = ''
+      form.description = ''
+      form.completed = false
+      successMessage.value = 'Task created successfully!'
+      errorMessage.value = ''
+      setTimeout(() => {
+        successMessage.value = ''
+      }, 3000)
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch (err) {
+    errorMessage.value = err.response?.data?.error || 'Operation failed. Please try again.'
+    successMessage.value = ''
+  }
 }
 
 const onCancel = () => {
